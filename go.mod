@@ -4,7 +4,7 @@ go 1.25.1
 
 require github.com/mattn/go-sqlite3 v1.14.33
 
-require github.com/pardnchiu/go-pkg v0.12.1
+require github.com/pardnchiu/go-pkg v0.13.0
 
 require (
 	github.com/gin-gonic/gin v1.12.0

@@ -1,17 +1,12 @@
-.PHONY: app bin install build vet test clean add list remove edit help
+.PHONY: app build add list remove edit help
 
 BIN := bin/kura
 
-app:
-	go run ./cmd/app
-
-# Produce ./bin/kura.
-bin:
+build:
 	go build -o $(BIN) ./cmd/app
 
-# Install ./bin/kura into $GOBIN (or $GOPATH/bin) as `kura`.
-install:
-	go install ./cmd/app
+app: build
+	./$(BIN)
 
 # Subcommands.
 # Usage:
@@ -34,16 +29,3 @@ edit:
 
 help:
 	go run ./cmd/app help
-
-vet:
-	go vet ./...
-
-test:
-	go test ./...
-
-# Compile-only check, no artifact left on disk.
-build:
-	go build -o /dev/null ./...
-
-clean:
-	rm -f app kura $(BIN)

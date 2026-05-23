@@ -106,7 +106,7 @@ func toolsDir() (string, error) {
 	if home == "" {
 		return "", errors.New("home directory is empty")
 	}
-	return filepath.Join(home, ".config", "Agenvoy", "api_tools"), nil
+	return filepath.Join(home, ".config", "agenvoy", "tools", "api"), nil
 }
 
 func limitParam() parameter {

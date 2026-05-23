@@ -76,23 +76,38 @@ func WalkFiles(ctx context.Context, root, dir string, prev *map[string]File, db 
 
 			if !data.IsDir {
 				ext := strings.ToLower(filepath.Ext(entry.Name()))
+				kind := "text"
 				var (
 					files []go_pkg_parser.Chunk
 					err   error
+					skip  bool
 				)
-				switch ext {
-				case ".pdf":
+				switch {
+				case shouldSkipByName(entry.Name()), shouldSkipByExt(ext):
+					skip = true
+				case ext == ".pdf":
+					kind = "pdf"
 					_, files, err = go_pkg_parser.PDF(ctx, path)
-				case ".docx":
+				case ext == ".docx":
+					kind = "docx"
 					_, files, err = go_pkg_parser.Docx(ctx, path)
-				case ".pptx":
+				case ext == ".pptx":
+					kind = "pptx"
 					_, files, err = go_pkg_parser.PPTX(ctx, path)
-				case ".txt", ".md":
-					_, files, err = go_pkg_parser.Markdown(ctx, path)
+				case ext == ".csv", ext == ".tsv":
+					kind = "csv"
+					files, err = parseTabular(ctx, path, go_pkg_parser.CSV)
+				case ext == ".xlsx":
+					kind = "xlsx"
+					files, err = parseTabular(ctx, path, go_pkg_parser.XLSX)
 				default:
-					ext = ""
+					if !looksLikeText(path) {
+						skip = true
+						break
+					}
+					_, files, err = go_pkg_parser.Markdown(ctx, path)
 				}
-				if ext != "" {
+				if !skip {
 					if err != nil {
 						slog.Warn("parser",
 							slog.String("error", err.Error()))
@@ -101,7 +116,7 @@ func WalkFiles(ctx context.Context, root, dir string, prev *map[string]File, db 
 							slog.String("error", perr.Error()))
 					} else {
 						slog.Info("saved",
-							slog.String("ext", ext),
+							slog.String("kind", kind),
 							slog.String("path", path),
 							slog.Int("chunks", len(files)))
 					}
