@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	go_pkg_utils "github.com/pardnchiu/go-pkg/utils"
+	go_pkg_keychain "github.com/pardnchiu/go-pkg/filesystem/keychain"
 )
 
 const (
@@ -28,7 +28,7 @@ type Embedder interface {
 }
 
 func New() (*OpenAI, error) {
-	apiKey := go_pkg_utils.GetWithDefault("OPENAI_API_KEY", "")
+	apiKey := go_pkg_keychain.Get("OPENAI_API_KEY")
 	if apiKey == "" {
 		return nil, fmt.Errorf("OPENAI_API_KEY is required")
 	}

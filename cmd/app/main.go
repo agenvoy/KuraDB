@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	go_pkg_filesystem "github.com/pardnchiu/go-pkg/filesystem"
+	go_pkg_keychain "github.com/pardnchiu/go-pkg/filesystem/keychain"
 
 	"github.com/agenvoy/kuradb/internal/database"
 	databaseHandler "github.com/agenvoy/kuradb/internal/database/handler"
@@ -61,13 +61,8 @@ func runServer() {
 	}
 	defer cancel()
 
-	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
-		slog.Error("godotenv.Load",
-			slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-
 	homeDir, configDir := mustConfigDir()
+	go_pkg_keychain.Init("KuraDB", configDir)
 
 	reg := database.New(filepath.Join(configDir, "db.json"))
 
@@ -168,7 +163,7 @@ func runServer() {
 			slog.String("db", entry.DB))
 	}
 
-	go runHTTP(ctx, reg, perDBs, embedder, qcache)
+	go runHTTP(ctx, configDir, reg, perDBs, embedder, qcache)
 
 	<-ctx.Done()
 	slog.Info("shutdown",
@@ -232,7 +227,7 @@ func mustConfigDir() (homeDir, configDir string) {
 		fmt.Fprintln(os.Stderr, "home directory is empty")
 		os.Exit(1)
 	}
-	configDir = filepath.Join(homeDir, ".config", "KuraDB")
+	configDir = filepath.Join(homeDir, ".config", "kuradb")
 	if err := go_pkg_filesystem.CheckDir(configDir, true); err != nil {
 		fmt.Fprintf(os.Stderr, "CheckDir %s: %v\n", configDir, err)
 		os.Exit(1)

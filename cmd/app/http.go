@@ -8,9 +8,12 @@ import (
 	"math/rand/v2"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/agenvoy/kuradb/internal/agenvoy"
+	go_pkg_filesystem "github.com/pardnchiu/go-pkg/filesystem"
+
 	"github.com/agenvoy/kuradb/internal/api"
 	"github.com/agenvoy/kuradb/internal/database"
 	"github.com/agenvoy/kuradb/internal/openai"
@@ -25,7 +28,7 @@ const (
 	httpShutdownTimeout   = 5 * time.Second
 )
 
-func runHTTP(ctx context.Context, reg *database.Registry, perDBs map[string]*database.DB, embedder openai.Embedder, qcache *openai.Cache) {
+func runHTTP(ctx context.Context, configDir string, reg *database.Registry, perDBs map[string]*database.DB, embedder openai.Embedder, qcache *openai.Cache) {
 	ln, port, err := pickListener()
 	if err != nil {
 		slog.Error("http: pickListener",
@@ -33,16 +36,23 @@ func runHTTP(ctx context.Context, reg *database.Registry, perDBs map[string]*dat
 		return
 	}
 
-	url := fmt.Sprintf("http://%s:%d", "127.0.0.1", port)
+	url := fmt.Sprintf("http://%s:%d", "localhost", port)
+
+	endpointPath := filepath.Join(configDir, "endpoint")
+	if err := go_pkg_filesystem.WriteFile(endpointPath, url, 0644); err != nil {
+		slog.Warn("endpoint: write",
+			slog.String("path", endpointPath),
+			slog.String("error", err.Error()))
+	}
 
 	dbNames := make([]string, 0, len(perDBs))
 	for name := range perDBs {
 		dbNames = append(dbNames, name)
 	}
-	if err := agenvoy.Register(url, dbNames); err != nil {
-		slog.Warn("agenvoy.Register",
-			slog.String("error", err.Error()))
-	}
+	// if err := agenvoy.Register(url, dbNames); err != nil {
+	// 	slog.Warn("agenvoy.Register",
+	// 		slog.String("error", err.Error()))
+	// }
 
 	srv := &http.Server{
 		Handler:           api.Router(reg, perDBs, embedder, qcache),
@@ -51,8 +61,13 @@ func runHTTP(ctx context.Context, reg *database.Registry, perDBs map[string]*dat
 
 	go func() {
 		<-ctx.Done()
-		if err := agenvoy.Unregister(); err != nil {
-			slog.Warn("agenvoy.Unregister",
+		// if err := agenvoy.Unregister(); err != nil {
+		// 	slog.Warn("agenvoy.Unregister",
+		// 		slog.String("error", err.Error()))
+		// }
+		if err := os.Remove(endpointPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			slog.Warn("endpoint: remove",
+				slog.String("path", endpointPath),
 				slog.String("error", err.Error()))
 		}
 		shutCtx, cancel := context.WithTimeout(context.Background(), httpShutdownTimeout)

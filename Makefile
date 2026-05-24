@@ -2,6 +2,11 @@
 
 BIN := bin/kura
 
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 build:
 	go build -o $(BIN) ./cmd/app
 

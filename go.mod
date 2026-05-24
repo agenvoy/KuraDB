@@ -9,7 +9,6 @@ require github.com/pardnchiu/go-pkg v0.13.0
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-ego/gse v1.0.2
-	github.com/joho/godotenv v1.5.1
 )
 
 require (
