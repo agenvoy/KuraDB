@@ -62,7 +62,7 @@ func runServer() {
 	defer cancel()
 
 	homeDir, configDir := mustConfigDir()
-	go_pkg_keychain.Init("KuraDB", configDir)
+	go_pkg_keychain.Init("kuradb", configDir)
 
 	reg := database.New(filepath.Join(configDir, "db.json"))
 
