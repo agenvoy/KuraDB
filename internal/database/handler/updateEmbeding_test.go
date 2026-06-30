@@ -1,4 +1,4 @@
-package databaseHandler_integration_test
+package databaseHandler_test
 
 import (
 	"bytes"

@@ -1,14 +1,16 @@
-package openai_integration_test
+package openai_test
 
 import (
+	"context"
 	"math"
 	"testing"
 
 	"github.com/agenvoy/kuradb/internal/openai"
 )
 
-// EmbedBatch requires a live OpenAI API endpoint and credentials, so only the
-// pure codec helpers Encode and Decode are covered here.
+// EmbedBatch requires a live OpenAI API endpoint and credentials, so only its
+// network-free guard paths plus the pure codec helpers Encode and Decode are
+// covered here.
 
 func TestEncode(t *testing.T) {
 	tests := []struct {
@@ -76,5 +78,29 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 				t.Errorf("round trip [%d]: got %v, want %v", i, got[i], v[i])
 			}
 		}
+	}
+}
+
+// TestOpenAI_EmbedBatch_NotInitialized covers the guard paths that return before
+// any network call: a nil receiver and a zero-value client. The success path and
+// empty-input short-circuit need a live, credentialed client and are out of scope.
+func TestOpenAI_EmbedBatch_NotInitialized(t *testing.T) {
+	tests := []struct {
+		name string
+		o    *openai.OpenAI
+	}{
+		{"nil receiver", nil},
+		{"zero-value client", &openai.OpenAI{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.o.EmbedBatch(context.Background(), []string{"hello"})
+			if err == nil {
+				t.Fatalf("EmbedBatch() on uninitialized client = nil error, want error")
+			}
+			if got != nil {
+				t.Errorf("EmbedBatch() result = %v, want nil", got)
+			}
+		})
 	}
 }

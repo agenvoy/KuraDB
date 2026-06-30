@@ -1,4 +1,4 @@
-package openai_integration_test
+package openai_test
 
 import (
 	"testing"

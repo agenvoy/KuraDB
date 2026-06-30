@@ -1,4 +1,4 @@
-package filesystem_integration_test
+package filesystem_test
 
 import (
 	"context"

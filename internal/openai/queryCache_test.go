@@ -1,4 +1,4 @@
-package openai_integration_test
+package openai_test
 
 import (
 	"sync"
@@ -12,8 +12,8 @@ func TestNewCache(t *testing.T) {
 	if c == nil {
 		t.Fatal("NewCache() returned nil")
 	}
-	if c.Len() != 0 {
-		t.Errorf("Len() on fresh cache = %d, want 0", c.Len())
+	if v, ok := c.Get("any"); ok || v != nil {
+		t.Errorf("fresh cache Get = (%v, %v), want (nil, false)", v, ok)
 	}
 }
 
@@ -85,30 +85,8 @@ func TestCache_OnSet(t *testing.T) {
 	}
 }
 
-func TestCache_Len(t *testing.T) {
-	c := openai.NewCache()
-	if c.Len() != 0 {
-		t.Errorf("Len() initial = %d, want 0", c.Len())
-	}
-	c.Set("a", []float32{1})
-	if c.Len() != 1 {
-		t.Errorf("Len() after 1 Set = %d, want 1", c.Len())
-	}
-	c.Set("a", []float32{2})
-	if c.Len() != 1 {
-		t.Errorf("Len() after overwrite = %d, want 1", c.Len())
-	}
-	c.Preload("b", []float32{3})
-	if c.Len() != 2 {
-		t.Errorf("Len() after Preload = %d, want 2", c.Len())
-	}
-}
-
 func TestCache_NilSafe(t *testing.T) {
 	var c *openai.Cache
-	if got := c.Len(); got != 0 {
-		t.Errorf("nil.Len() = %d, want 0", got)
-	}
 	if v, ok := c.Get("x"); v != nil || ok {
 		t.Errorf("nil.Get() = (%v, %v), want (nil, false)", v, ok)
 	}
