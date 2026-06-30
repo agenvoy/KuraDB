@@ -9,7 +9,7 @@ import (
 )
 
 func SearchKeyword(db *database.DB, ctx context.Context, keywords []string, limit int) ([]FileRow, error) {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Read == nil {
 		return nil, fmt.Errorf("db is required")
 	}
 	if len(keywords) == 0 {
@@ -51,9 +51,9 @@ LIMIT ?;`)
 	}
 	args = append(args, limit)
 
-	rows, err := db.DB.QueryContext(ctx, sb.String(), args...)
+	rows, err := db.Read.QueryContext(ctx, sb.String(), args...)
 	if err != nil {
-		return nil, fmt.Errorf("db.DB.QueryContext: %w", err)
+		return nil, fmt.Errorf("db.Read.QueryContext: %w", err)
 	}
 	defer rows.Close()
 

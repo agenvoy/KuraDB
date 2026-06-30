@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 	"math"
+	"unicode/utf8"
 
 	go_pkg_http "github.com/pardnchiu/go-pkg/http"
 )
+
+const maxInputRunes = 8000 // CJK: 1 char ≈ 1 token; API limit 8192 tokens
 
 type embedResponse struct {
 	Data []struct {
@@ -26,8 +30,22 @@ func (o *OpenAI) EmbedBatch(ctx context.Context, texts []string) ([]Vector, erro
 		return nil, nil
 	}
 
+	safe := make([]string, len(texts))
+	for i, t := range texts {
+		if utf8.RuneCountInString(t) > maxInputRunes {
+			slog.Warn("openai: truncating oversized input",
+				slog.Int("index", i),
+				slog.Int("runes", utf8.RuneCountInString(t)),
+				slog.Int("limit", maxInputRunes))
+			runes := []rune(t)
+			safe[i] = string(runes[:maxInputRunes])
+		} else {
+			safe[i] = t
+		}
+	}
+
 	body := map[string]any{
-		"input":      texts,
+		"input":      safe,
 		"model":      model,
 		"dimensions": dim,
 	}

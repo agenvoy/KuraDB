@@ -14,7 +14,7 @@ type EmbeddingItem struct {
 }
 
 func UpdateEmbedding(db *database.DB, ctx context.Context, items []EmbeddingItem) ([]int64, error) {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Write == nil {
 		return nil, fmt.Errorf("db is required")
 	}
 	if len(items) == 0 {
@@ -24,9 +24,9 @@ func UpdateEmbedding(db *database.DB, ctx context.Context, items []EmbeddingItem
 		return nil, err
 	}
 
-	tx, err := db.DB.BeginTx(ctx, nil)
+	tx, err := db.Write.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("db.DB.BeginTx: %w", err)
+		return nil, fmt.Errorf("db.Write.BeginTx: %w", err)
 	}
 	defer tx.Rollback()
 

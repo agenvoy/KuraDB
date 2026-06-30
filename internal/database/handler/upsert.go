@@ -10,7 +10,7 @@ import (
 )
 
 func Upsert(db *database.DB, ctx context.Context, source string, files []go_pkg_parser.Chunk) error {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Write == nil {
 		return fmt.Errorf("db is required")
 	}
 	if source == "" {
@@ -20,9 +20,9 @@ func Upsert(db *database.DB, ctx context.Context, source string, files []go_pkg_
 		return err
 	}
 
-	tx, err := db.DB.BeginTx(ctx, nil)
+	tx, err := db.Write.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("db.DB.BeginTx: %w", err)
+		return fmt.Errorf("db.Write.BeginTx: %w", err)
 	}
 	defer tx.Rollback()
 

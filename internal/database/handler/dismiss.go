@@ -8,7 +8,7 @@ import (
 )
 
 func Dismiss(db *database.DB, ctx context.Context, source string) error {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Write == nil {
 		return fmt.Errorf("db is required")
 	}
 	if source == "" {
@@ -18,7 +18,7 @@ func Dismiss(db *database.DB, ctx context.Context, source string) error {
 		return err
 	}
 
-	if _, err := db.DB.ExecContext(ctx, `
+	if _, err := db.Write.ExecContext(ctx, `
 UPDATE file_data
 SET dismiss = TRUE,
     updated_at = CURRENT_TIMESTAMP

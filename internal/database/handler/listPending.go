@@ -15,7 +15,7 @@ type Pending struct {
 }
 
 func ListPending(db *database.DB, ctx context.Context, limit int) ([]Pending, error) {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Read == nil {
 		return nil, fmt.Errorf("db is required")
 	}
 	if limit <= 0 {
@@ -26,7 +26,7 @@ func ListPending(db *database.DB, ctx context.Context, limit int) ([]Pending, er
 		return nil, err
 	}
 
-	rows, err := db.DB.QueryContext(ctx, `
+	rows, err := db.Read.QueryContext(ctx, `
 SELECT id, source, content
 FROM file_data
 WHERE is_embed = FALSE
@@ -35,7 +35,7 @@ ORDER BY id ASC
 LIMIT ?;
 `, limit)
 	if err != nil {
-		return nil, fmt.Errorf("db.DB.QueryContext: %w", err)
+		return nil, fmt.Errorf("db.Read.QueryContext: %w", err)
 	}
 	defer rows.Close()
 

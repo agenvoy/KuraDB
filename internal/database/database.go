@@ -6,7 +6,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3"
+	go_sqlkit "github.com/pardnchiu/go-sqlkit"
+	go_sqlkit_core "github.com/pardnchiu/go-sqlkit/core"
 )
 
 //go:embed schema/file_data.sql
@@ -15,8 +16,12 @@ var sqlSchemaFileData string
 //go:embed schema/query_cache.sql
 var sqlSchemaQueryCache string
 
+const readPoolSize = 8
+
 type DB struct {
-	DB *sql.DB
+	conn  *go_sqlkit_core.Connector
+	Read  *sql.DB
+	Write *sql.DB
 }
 
 func OpenPerDB(ctx context.Context, path string) (*DB, error) {
@@ -32,26 +37,19 @@ func openWithSchemas(ctx context.Context, path string, schemas []string) (*DB, e
 		return nil, fmt.Errorf("database: path is required")
 	}
 
-	dsn := fmt.Sprintf(
-		"file:%s?_journal_mode=WAL&_busy_timeout=15000&_synchronous=NORMAL&_foreign_keys=on",
-		path,
-	)
-
-	raw, err := sql.Open("sqlite3", dsn)
+	conn, err := go_sqlkit.New(go_sqlkit_core.Config{
+		Target:       go_sqlkit_core.SQLite,
+		Path:         path,
+		MaxOpenConns: readPoolSize,
+		MaxIdleConns: readPoolSize,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("database: open: %w", err)
 	}
-	raw.SetMaxOpenConns(1)
-	raw.SetMaxIdleConns(1)
 
-	if err := raw.PingContext(ctx); err != nil {
-		raw.Close()
-		return nil, fmt.Errorf("database: ping: %w", err)
-	}
-
-	db := &DB{DB: raw}
+	db := &DB{conn: conn, Read: conn.Read, Write: conn.Write}
 	for i, s := range schemas {
-		if _, err := db.DB.ExecContext(ctx, s); err != nil {
+		if _, err := db.Write.ExecContext(ctx, s); err != nil {
 			db.Close()
 			return nil, fmt.Errorf("database: migrate[%d]: %w", i, err)
 		}
@@ -60,8 +58,8 @@ func openWithSchemas(ctx context.Context, path string, schemas []string) (*DB, e
 }
 
 func (db *DB) Close() {
-	if db == nil || db.DB == nil {
+	if db == nil || db.conn == nil {
 		return
 	}
-	db.DB.Close()
+	db.conn.Close()
 }

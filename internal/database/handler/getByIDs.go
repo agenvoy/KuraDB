@@ -18,7 +18,7 @@ type FileRow struct {
 }
 
 func GetByIDs(db *database.DB, ctx context.Context, ids []int64) ([]FileRow, error) {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Read == nil {
 		return nil, fmt.Errorf("db is required")
 	}
 	if len(ids) == 0 {
@@ -41,9 +41,9 @@ AND dismiss = FALSE;
 		args[i] = id
 	}
 
-	rows, err := db.DB.QueryContext(ctx, query, args...)
+	rows, err := db.Read.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("db.DB.QueryContext: %w", err)
+		return nil, fmt.Errorf("db.Read.QueryContext: %w", err)
 	}
 	defer rows.Close()
 

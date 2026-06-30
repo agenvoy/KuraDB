@@ -8,7 +8,7 @@ import (
 )
 
 func LoadEmbedding(db *database.DB, ctx context.Context, fn func(id int64, source string, blob []byte) error) error {
-	if db == nil || db.DB == nil {
+	if db == nil || db.Read == nil {
 		return fmt.Errorf("db is required")
 	}
 	if fn == nil {
@@ -18,7 +18,7 @@ func LoadEmbedding(db *database.DB, ctx context.Context, fn func(id int64, sourc
 		return err
 	}
 
-	rows, err := db.DB.QueryContext(ctx, `
+	rows, err := db.Read.QueryContext(ctx, `
 SELECT id, source, embedding
 FROM file_data
 WHERE is_embed = TRUE
@@ -26,7 +26,7 @@ AND dismiss = FALSE
 AND embedding IS NOT NULL;
 `)
 	if err != nil {
-		return fmt.Errorf("db.DB.QueryContext: %w", err)
+		return fmt.Errorf("db.Read.QueryContext: %w", err)
 	}
 	defer rows.Close()
 
