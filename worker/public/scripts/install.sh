@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # KuraDB installer
-# Usage:  curl -fsSL https://raw.githubusercontent.com/agenvoy/kuradb/main/install.sh | bash
+# Usage:  curl -fsSL https://kuradb.agenvoy.com/scripts/install.sh | bash
 #
 set -euo pipefail
 
