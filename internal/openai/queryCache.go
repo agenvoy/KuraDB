@@ -52,12 +52,3 @@ func (c *Cache) Preload(q string, v []float32) {
 	defer c.mu.Unlock()
 	c.cacheMap[q] = v
 }
-
-func (c *Cache) Len() int {
-	if c == nil {
-		return 0
-	}
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return len(c.cacheMap)
-}

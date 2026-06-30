@@ -45,15 +45,6 @@ func runHTTP(ctx context.Context, configDir string, reg *database.Registry, perD
 			slog.String("error", err.Error()))
 	}
 
-	dbNames := make([]string, 0, len(perDBs))
-	for name := range perDBs {
-		dbNames = append(dbNames, name)
-	}
-	// if err := agenvoy.Register(url, dbNames); err != nil {
-	// 	slog.Warn("agenvoy.Register",
-	// 		slog.String("error", err.Error()))
-	// }
-
 	srv := &http.Server{
 		Handler:           api.Router(reg, perDBs, embedder, qcache),
 		ReadHeaderTimeout: httpReadHeaderTimeout,
@@ -61,10 +52,6 @@ func runHTTP(ctx context.Context, configDir string, reg *database.Registry, perD
 
 	go func() {
 		<-ctx.Done()
-		// if err := agenvoy.Unregister(); err != nil {
-		// 	slog.Warn("agenvoy.Unregister",
-		// 		slog.String("error", err.Error()))
-		// }
 		if err := os.Remove(endpointPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 			slog.Warn("endpoint: remove",
 				slog.String("path", endpointPath),

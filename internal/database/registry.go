@@ -78,25 +78,6 @@ func (r *Registry) Add(name string) error {
 	return r.save(list)
 }
 
-func (r *Registry) AddIfMissing(name string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	list, err := r.load()
-	if err != nil {
-		return err
-	}
-	for _, e := range list {
-		if e.DB == name {
-			return nil
-		}
-	}
-	list = append(list, Entry{
-		DB:       name,
-		CreateAt: time.Now().UTC().Format(time.RFC3339),
-	})
-	return r.save(list)
-}
-
 func (r *Registry) Remove(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

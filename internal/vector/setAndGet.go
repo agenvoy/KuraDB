@@ -37,16 +37,3 @@ func (b *Bucket) remove(id int64, source string) {
 		delete(b.sourceVectors, source)
 	}
 }
-
-func Get(db string, id int64) ([]float32, bool, error) {
-	bucket, err := cache.bucket(db)
-	if err != nil {
-		return nil, false, err
-	}
-
-	bucket.mu.RLock()
-	defer bucket.mu.RUnlock()
-
-	vector, ok := bucket.idVectors[id]
-	return vector, ok, nil
-}
