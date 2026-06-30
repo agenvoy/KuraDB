@@ -18,7 +18,7 @@ func TestSaveQueryCache_Nominal(t *testing.T) {
 	}
 
 	var got []byte
-	row := db.DB.QueryRowContext(context.Background(),
+	row := db.Read.QueryRowContext(context.Background(),
 		`SELECT embedding FROM query_cache WHERE query = ?`, "hello")
 	if err := row.Scan(&got); err != nil {
 		t.Fatalf("scan: %v", err)
@@ -41,7 +41,7 @@ func TestSaveQueryCache_Upsert(t *testing.T) {
 	}
 
 	var got []byte
-	row := db.DB.QueryRowContext(context.Background(),
+	row := db.Read.QueryRowContext(context.Background(),
 		`SELECT embedding FROM query_cache WHERE query = ?`, "k")
 	if err := row.Scan(&got); err != nil {
 		t.Fatalf("scan: %v", err)

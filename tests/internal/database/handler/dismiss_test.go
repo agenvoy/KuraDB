@@ -17,7 +17,7 @@ func TestDismiss_Nominal(t *testing.T) {
 	}
 
 	var dismissed int
-	row := db.DB.QueryRowContext(context.Background(),
+	row := db.Read.QueryRowContext(context.Background(),
 		`SELECT COUNT(*) FROM file_data WHERE source = ? AND dismiss = TRUE`, src)
 	if err := row.Scan(&dismissed); err != nil {
 		t.Fatalf("scan: %v", err)
@@ -56,7 +56,7 @@ func TestDismiss_NonexistentSource(t *testing.T) {
 	}
 
 	var dismissed int
-	row := db.DB.QueryRowContext(context.Background(),
+	row := db.Read.QueryRowContext(context.Background(),
 		`SELECT COUNT(*) FROM file_data WHERE dismiss = TRUE`)
 	if err := row.Scan(&dismissed); err != nil {
 		t.Fatalf("scan: %v", err)

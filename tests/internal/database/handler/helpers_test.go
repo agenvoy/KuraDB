@@ -37,7 +37,7 @@ func seedFileData(t *testing.T, db *database.DB, source string, total int, conte
 	}
 	ids := make([]int64, 0, total)
 	for i, c := range contents {
-		res, err := db.DB.ExecContext(context.Background(),
+		res, err := db.Write.ExecContext(context.Background(),
 			`INSERT INTO file_data (source, chunk, total, content) VALUES (?, ?, ?, ?)`,
 			source, i+1, total, c,
 		)

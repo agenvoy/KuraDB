@@ -30,7 +30,7 @@ func TestUpdateEmbedding_Nominal(t *testing.T) {
 	for _, it := range items {
 		var blob []byte
 		var isEmbed bool
-		row := db.DB.QueryRowContext(context.Background(),
+		row := db.Read.QueryRowContext(context.Background(),
 			`SELECT embedding, is_embed FROM file_data WHERE id = ?`, it.ID)
 		if err := row.Scan(&blob, &isEmbed); err != nil {
 			t.Fatalf("scan id=%d: %v", it.ID, err)
@@ -96,7 +96,7 @@ func TestUpdateEmbedding_ContentMismatchSkipped(t *testing.T) {
 	}
 
 	var isEmbed bool
-	row := db.DB.QueryRowContext(context.Background(),
+	row := db.Read.QueryRowContext(context.Background(),
 		`SELECT is_embed FROM file_data WHERE id = ?`, ids[0])
 	if err := row.Scan(&isEmbed); err != nil {
 		t.Fatalf("scan: %v", err)
