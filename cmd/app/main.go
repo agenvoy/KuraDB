@@ -20,6 +20,7 @@ import (
 	databaseHandler "github.com/agenvoy/kuradb/internal/database/handler"
 	"github.com/agenvoy/kuradb/internal/filesystem"
 	"github.com/agenvoy/kuradb/internal/openai"
+	"github.com/agenvoy/kuradb/internal/runtime"
 	"github.com/agenvoy/kuradb/internal/utils/segmenter"
 	"github.com/agenvoy/kuradb/internal/vector"
 )
@@ -33,6 +34,9 @@ const (
 func main() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
+		case "--daemon":
+			runServerDaemon()
+			return
 		case "add":
 			cmdAdd(os.Args[2:])
 			return
@@ -45,6 +49,9 @@ func main() {
 		case "edit":
 			cmdEdit(os.Args[2:])
 			return
+		case "stop":
+			cmdStop()
+			return
 		case "help", "-h", "--help":
 			printUsage(os.Stdout)
 			return
@@ -54,6 +61,57 @@ func main() {
 }
 
 func runServer() {
+	// Daemonize: fork into background.
+	exe, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "os.Executable: %v\n", err)
+		os.Exit(1)
+	}
+
+	_, configDir := mustConfigDir()
+
+	logFile, err := os.OpenFile(filepath.Join(configDir, "daemon.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "open daemon.log: %v\n", err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
+
+	devNull, err := os.OpenFile(os.DevNull, os.O_RDONLY, 0)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "open /dev/null: %v\n", err)
+		os.Exit(1)
+	}
+	defer devNull.Close()
+
+	proc, err := os.StartProcess(exe, []string{exe, "--daemon"}, &os.ProcAttr{
+		Files: []*os.File{devNull, logFile, logFile},
+		Sys:   &syscall.SysProcAttr{Setsid: true},
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "os.StartProcess: %v\n", err)
+		os.Exit(1)
+	}
+	if err := proc.Release(); err != nil {
+		fmt.Fprintf(os.Stderr, "proc.Release: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Wait for the daemon to become ready.
+	endpointPath := filepath.Join(configDir, "endpoint")
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if data, err := os.ReadFile(endpointPath); err == nil && len(data) > 0 {
+			fmt.Println(strings.TrimSpace(string(data)))
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Fprintf(os.Stderr, "daemon did not become ready within 10s; check %s\n", filepath.Join(configDir, "daemon.log"))
+	os.Exit(1)
+}
+
+func runServerDaemon() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	if err := ctx.Err(); err != nil {
 		slog.Info("shutdown before start", "reason", err)
@@ -62,6 +120,12 @@ func runServer() {
 	defer cancel()
 
 	homeDir, configDir := mustConfigDir()
+
+	// Write runtime.uid so parent daemon spawner can detect readiness.
+	if _, err := runtime.Init(configDir); err != nil {
+		slog.Warn("runtime.Init", slog.String("error", err.Error()))
+	}
+
 	go_pkg_keychain.Init("kuradb", configDir)
 
 	reg := database.New(filepath.Join(configDir, "db.json"))
@@ -168,6 +232,10 @@ func runServer() {
 	<-ctx.Done()
 	slog.Info("shutdown",
 		slog.String("reason", ctx.Err().Error()))
+
+	if err := runtime.Clear(configDir); err != nil {
+		slog.Warn("runtime.Clear", slog.String("error", err.Error()))
+	}
 
 	for _, db := range perDBs {
 		db.Close()

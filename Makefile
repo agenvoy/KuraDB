@@ -1,4 +1,4 @@
-.PHONY: app build add list remove edit help
+.PHONY: app build stop test add list remove edit help
 
 BIN := bin/kura
 
@@ -9,9 +9,18 @@ endif
 
 build:
 	go build -o $(BIN) ./cmd/app
+	@sudo mkdir -p /usr/local/bin && sudo mv $(BIN) /usr/local/bin/kura
 
-app: build
-	./$(BIN)
+app:
+	@$(MAKE) stop
+	@$(MAKE) build
+	@kura
+
+stop:
+	@go run ./cmd/app stop
+
+test:
+	@go test -v -count=1 ./...
 
 # Subcommands.
 # Usage:
