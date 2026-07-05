@@ -9,11 +9,11 @@ endif
 
 build:
 	go build -o $(BIN) ./cmd/app
-	@sudo mkdir -p /usr/local/bin && sudo mv $(BIN) /usr/local/bin/kura
 
 app:
 	@$(MAKE) stop
 	@$(MAKE) build
+	@sudo mkdir -p /usr/local/bin && sudo mv $(BIN) /usr/local/bin/kura
 	@kura
 
 stop:
