@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="robots" content="index, follow" />
+
+    <title>KuraDB - 放入資料夾，取得可搜尋知識庫 | 為 Agenvoy 打造的唯讀 RAG</title>
+    <meta name="title" content="KuraDB - 放入資料夾，取得可搜尋知識庫 | 為 Agenvoy 打造的唯讀 RAG" />
+    <meta name="description" content="KuraDB 將一個文件資料夾轉化為可立即搜尋、可供代理程式使用的知識庫。將 PDF、Office 文件、試算表或 Markdown 放進去——KuraDB 會自動監看、解析、分塊與嵌入，並在嚴格唯讀的本機 API 上提供語意與 CJK 關鍵字搜尋。" />
+    <meta name="keywords" content="rag, retrieval augmented generation, vector search, semantic search, embeddings, sqlite, local first, agenvoy, kuradb, openai embeddings, document search, knowledge base, go" />
+    <meta name="author" content="Pardn Chiu" />
+    <link rel="author" href="https://pardn.io/" />
+    <link rel="canonical" href="https://kuradb.agenvoy.com/zh/" />
+    <link rel="icon" href="/logo-min.svg" type="image/svg+xml" />
+
+    <meta property="og:title" content="KuraDB - 放入資料夾，取得可搜尋知識庫" />
+    <meta property="og:description" content="為 Agenvoy 打造的唯讀 RAG 資料庫服務。監看一個資料夾、自動嵌入所有文件、在本機唯讀 API 上提供語意與關鍵字搜尋。基於 SQLite，無需外部向量資料庫。" />
+    <meta property="og:url" content="https://kuradb.agenvoy.com/zh/" />
+    <meta property="og:site_name" content="KuraDB" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="zh_TW" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="KuraDB - 放入資料夾，取得可搜尋知識庫" />
+    <meta property="twitter:description" content="為 Agenvoy 打造的唯讀 RAG 資料庫服務。監看資料夾、自動嵌入、提供語意與關鍵字搜尋。" />
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L5VYEZPVXX"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-L5VYEZPVXX");</script>
+
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@type":"SoftwareApplication",
+      "applicationCategory":"DeveloperApplication",
+      "operatingSystem":"macOS, Linux",
+      "inLanguage":"zh-Hant",
+      "name":"KuraDB",
+      "description":"A read-only RAG database service consumed by Agenvoy. Drop files into a watched folder; KuraDB parses, chunks, embeds, and indexes them, then serves semantic and CJK-aware keyword search over HTTP.",
+      "featureList":["Automatic ingestion pipeline","Semantic vector search","CJK-aware keyword search","Read-only HTTP API","Self-contained vector layer","SQLite source of truth","Automatic embedding","Soft-delete consistency"],
+      "url":"https://kuradb.agenvoy.com/zh/",
+      "sameAs":["https://github.com/agenvoy/kuradb"],
+      "creator":{"@type":"Person","name":"Pardn Chiu","url":"https://pardn.io/","sameAs":["https://github.com/pardnchiu"]}
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="/index.css" />
+  </head>
+  <body>
+    <!-- Nav -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="https://agenvoy.com" target="_blank" rel="noopener" class="nav-logo">
+          <picture>
+            <source media="(max-width: 480px)" srcset="/logo-min.svg" />
+            <img src="/logo-text.svg" alt="Agenvoy" />
+          </picture>
+          <span class="nav-sub">KuraDB</span>
+        </a>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="選單">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="nav-links">
+          <a href="#features">功能</a>
+          <a href="#pipeline">流程</a>
+          <a href="#search">搜尋</a>
+          <a href="#api">API</a>
+          <a href="#start">快速開始</a>
+        </div>
+        <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener" class="nav-gh">
+          <i class="fa-brands fa-github"></i>
+          GitHub
+        </a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          唯讀 RAG &middot; 為 Agenvoy 而生
+        </div>
+        <h1>放入資料夾。<br /><span class="grad">取得可搜尋知識庫。</span></h1>
+        <p class="hero-sub">KuraDB 監看一個資料夾，自動解析並嵌入所有文件 &mdash; 然後在嚴格唯讀的本機 API 上提供語意與 CJK 關鍵字搜尋。</p>
+        <div class="install-box">
+          <code id="install-cmd">curl -fsSL https://kuradb.agenvoy.com/scripts/install.sh | bash</code>
+          <button onclick="copyCmd()">複製</button>
+        </div>
+        <div class="hero-links">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener">Agenvoy</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Terminal Demo -->
+    <section class="s">
+      <div class="wrap">
+        <div class="term">
+          <div class="term-bar">
+            <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+            <span class="term-title">kura</span>
+          </div>
+          <div class="term-body">
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">kura add notes</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;created inbox</span> <span class="t-dim">~/Kura_notes -&gt; ~/.config/kuradb/notes/inbox</span></div>
+            <div><span class="t-dim">&nbsp;&nbsp;drop your PDFs, docs, sheets, or markdown here</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">kura</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;watch</span> <span class="t-dim">notes &middot; 14 files &middot; 312 chunks</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;embed</span> <span class="t-dim">312/312 &middot; text-embedding-3-small &middot; dim 512</span></div>
+            <div><span class="t-result">&nbsp;&nbsp;serving</span> <span class="t-dim">http://127.0.0.1:48213</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">curl '127.0.0.1:48213/api/semantic?db=notes&amp;q=retry+backoff+strategy'</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-tool">{</span> <span class="t-key">"results"</span><span class="t-tool">: [{</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">"source"</span><span class="t-tool">:</span> <span class="t-str">"resilience-patterns.pdf"</span><span class="t-tool">,</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">"matches"</span><span class="t-tool">: [{</span> <span class="t-key">"chunk"</span><span class="t-tool">:</span> <span class="t-result">7</span><span class="t-tool">,</span> <span class="t-key">"content"</span><span class="t-tool">:</span> <span class="t-str">"Exponential backoff with jitter..."</span> <span class="t-tool">}]</span></div>
+            <div><span class="t-tool">}] }</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="s alt" id="features">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">功能</span>
+          <h2>不會阻礙你的 RAG 後端</h2>
+          <p>監看、解析、嵌入並提供服務 &mdash; 單一 Go 二進位檔，無需外部向量資料庫。</p>
+        </div>
+        <div class="feat-grid">
+          <div class="feat">
+            <div class="feat-icon blue"><i class="fa-solid fa-gears"></i></div>
+            <h3>自動擷取</h3>
+            <p>將檔案放入監看資料夾。KuraDB 會自動辨識、解析、分塊並排入嵌入佇列 &mdash; 無需任何指令或結構定義。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon purple"><i class="fa-solid fa-star"></i></div>
+            <h3>語意向量搜尋</h3>
+            <p>兩階段的餘弦搜尋：先進行粗略的來源層級排序，再於各 CPU 核心間平行掃描片段層級。自行實作，不依賴 ToriiDB。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon teal"><i class="fa-solid fa-language"></i></div>
+            <h3>CJK 關鍵字搜尋</h3>
+            <p>以 gse 驅動的中文斷詞並搭配停用詞。根據關鍵字命中次數進行計分，實現精準、具語言感知的比對。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon red"><i class="fa-solid fa-lock"></i></div>
+            <h3>唯讀合約</h3>
+            <p>HTTP API 刻意未設計任何變更端點。資料只由監看管線單向進入 &mdash; 這是信任邊界，而非設定旗標。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon green"><i class="fa-solid fa-database"></i></div>
+            <h3>以 SQLite 為事實來源</h3>
+            <p>每個片段與向量都存放在 SQLite 中。記憶體中的向量快取可重建 &mdash; 永遠不是權威來源，重啟後也不會遺失。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon orange"><i class="fa-solid fa-bolt"></i></div>
+            <h3>智慧重新嵌入</h3>
+            <p>只在內容確實變更時才使向量失效。相同檔案會保留既有嵌入 &mdash; 不會浪費 OpenAI 的來回通訊。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon cyan"><i class="fa-solid fa-stopwatch"></i></div>
+            <h3>查詢快取</h3>
+            <p>查詢嵌入會快取在全域 SQLite 儲存庫中。重複搜尋會跳過嵌入呼叫，直接進入向量掃描。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon pink"><i class="fa-solid fa-filter"></i></div>
+            <h3>軟刪除一致性</h3>
+            <p>移除的檔案會被排除而非真正刪除。所有語意與關鍵字查詢都會嚴格過濾已排除的內容。</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon blue"><i class="fa-solid fa-plug"></i></div>
+            <h3>原生支援 Agenvoy</h3>
+            <p>綁定隨機本機埠並將 URL 發佈到端點檔案，讓 Agenvoy 能以子程序形式自動發現並使用。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section class="s" id="pipeline">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">流程</span>
+          <h2>刻意設計的單向擷取</h2>
+          <p>資料只能透過單一路徑進入。<code>database</code> 套件是唯一的寫入入口 &mdash; 其他部分都不會觸及 SQLite。</p>
+        </div>
+        <div class="gap-flow">
+          <div class="gap-step">
+            <div class="num">Step 1</div>
+            <h4>Watch</h4>
+            <p>每 10 秒輪詢收件匣。透過持久化的檔案大小與修改時間快照來偵測變更。</p>
+            <span class="badge">walkFiles</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 2</div>
+            <h4>Parse</h4>
+            <p>辨識文字、依類型分派、分割為片段 &mdash; PDF、Office 文件、試算表、Markdown。</p>
+            <span class="badge">parser</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 3</div>
+            <h4>Embed</h4>
+            <p>每 5 秒觸發一次，批次大小 64。嵌入待處理列，將向量寫回 SQLite。</p>
+            <span class="badge">openai</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 4</div>
+            <h4>Serve</h4>
+            <p>透過 localhost 提供唯讀 HTTP。對最新列進行兩階段向量加關鍵字搜尋。</p>
+            <span class="badge">gin</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search -->
+    <section class="s alt" id="search">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">搜尋</span>
+          <h2>兩種方式找到任何內容</h2>
+          <p>語意負責含義，關鍵字負責精確詞語。兩者都會過濾已排除的內容，且絕不洩漏內部計分欄位。</p>
+        </div>
+        <div class="mcp-grid">
+          <div class="mcp-card">
+            <div class="mcp-hd">
+              <span class="mcp-dir srv">Semantic</span>
+              <h3>以語意搜尋</h3>
+            </div>
+            <div class="mcp-bd">
+              <p>查詢快取 &rarr; 未命中時嵌入 &rarr; 兩階段餘弦搜尋 &rarr; 剔除低於 0.3 的命中 &rarr; 從 SQLite 還原完整列，並按來源分組。</p>
+              <div class="code-block">
+                <span class="cc"># GET /api/semantic</span><br>
+                <span class="cm">GET</span> /api/semantic?db=<span class="cs">notes</span>&amp;q=<span class="cs">retry+strategy</span>&amp;limit=<span class="ck">10</span><br>
+                <br>
+                {<br>
+                &nbsp;&nbsp;<span class="ck">"results"</span>: [{<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"source"</span>: <span class="cs">"resilience.pdf"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"matches"</span>: [{ <span class="ck">"chunk"</span>: 7, <span class="ck">"content"</span>: <span class="cs">"..."</span> }]<br>
+                &nbsp;&nbsp;}]<br>
+                }
+              </div>
+              <div class="tags">
+                <span class="tag">cosine similarity</span>
+                <span class="tag">two-stage scan</span>
+                <span class="tag">minScore 0.3</span>
+              </div>
+            </div>
+          </div>
+          <div class="mcp-card">
+            <div class="mcp-hd">
+              <span class="mcp-dir cli">Keyword</span>
+              <h3>以詞語搜尋</h3>
+            </div>
+            <div class="mcp-bd">
+              <p>以 CJK 感知的斷詞處理查詢，根據每個列命中多少關鍵字子句進行計分，按命中數量排序 &mdash; 永遠過濾已排除的列。</p>
+              <div class="code-block">
+                <span class="cc"># GET /api/keyword</span><br>
+                <span class="cm">GET</span> /api/keyword?db=<span class="cs">notes</span>&amp;q=<span class="cs">&#37325;&#35430;+&#36864;&#36991;</span>&amp;limit=<span class="ck">10</span><br>
+                <br>
+                {<br>
+                &nbsp;&nbsp;<span class="ck">"results"</span>: [{<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"source"</span>: <span class="cs">"retry-notes.md"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"matches"</span>: [{ <span class="ck">"chunk"</span>: 2, <span class="ck">"content"</span>: <span class="cs">"..."</span> }]<br>
+                &nbsp;&nbsp;}]<br>
+                }
+              </div>
+              <div class="tags">
+                <span class="tag">go-ego/gse</span>
+                <span class="tag">stopwords</span>
+                <span class="tag">hit-count rank</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formats -->
+    <section class="s" id="formats">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">格式</span>
+          <h2>支援任何文件</h2>
+          <p>文字辨識會自動跳過二進位檔與媒體。其他所有內容都會被解析、分塊並嵌入。</p>
+        </div>
+        <div class="int-grid">
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-pdf"></i></div>
+            <h4>PDF</h4>
+            <p>完整文字擷取，頁面感知分塊</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-lines"></i></div>
+            <h4>DOCX &middot; PPTX</h4>
+            <p>Word 與 PowerPoint 文件內文</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-table"></i></div>
+            <h4>XLSX &middot; CSV</h4>
+            <p>將表格攤平為列</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-code"></i></div>
+            <h4>Markdown</h4>
+            <p>Markdown 與純 UTF-8 文字</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-network-wired"></i></div>
+            <h4>REST API</h4>
+            <p>供任何使用者呼叫的唯讀 HTTP</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API + CLI -->
+    <section class="s alt" id="api">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">介面</span>
+          <h2>唯讀 API 與輕量 CLI</h2>
+          <p>四個端點供查詢，四個子命令供管理。完全沒有任何變更表面。</p>
+        </div>
+        <div class="tool-grid">
+          <div class="tool-grp">
+            <h3>HTTP Endpoints</h3>
+            <p class="desc">所有端點都在 <code>/api</code> 下，綁定到 localhost 上的隨機空閒埠。limit 預設為 10，最大值 100。</p>
+            <div class="ep">
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>health</b></span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>list</b></span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>semantic</b>?db=&amp;q=&amp;limit=</span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>keyword</b>?db=&amp;q=&amp;limit=</span></div>
+            </div>
+          </div>
+          <div class="tool-grp">
+            <h3>CLI Commands</h3>
+            <p class="desc">不帶任何參數執行 <code>kura</code> 即可啟動伺服器。子命令用來管理資料庫登錄。</p>
+            <div class="tool-tags">
+              <span class="tt"><b>kura</b> &middot; start server</span>
+              <span class="tt"><b>kura add</b> &lt;name&gt;</span>
+              <span class="tt"><b>kura list</b></span>
+              <span class="tt"><b>kura remove</b> &lt;name&gt;</span>
+              <span class="tt"><b>kura edit</b> &lt;old&gt; &lt;new&gt;</span>
+              <span class="tt"><b>kura help</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stack -->
+    <section class="s" id="stack">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">底層設計</span>
+          <h2>精簡堆疊，無重度依賴</h2>
+          <p>個人尺度的資料需要的是線性掃描與良好索引 &mdash; 而非分散式向量叢集。</p>
+        </div>
+        <div class="prov-grid">
+          <div class="prov">
+            <span class="prov-dot" style="background:#00add8"></span>
+            <div><div class="prov-name">Go 1.25</div><div class="prov-desc">Single static binary</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#003b57"></span>
+            <div><div class="prov-name">SQLite</div><div class="prov-desc">Source of truth</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#10a37f"></span>
+            <div><div class="prov-name">OpenAI</div><div class="prov-desc">embedding-3-small &middot; 512</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#00acd7"></span>
+            <div><div class="prov-name">Gin</div><div class="prov-desc">Read-only HTTP</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#1461DC"></span>
+            <div><div class="prov-name">go-sqlkit</div><div class="prov-desc">Read/write pools</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#6d28d9"></span>
+            <div><div class="prov-name">go-pkg</div><div class="prov-desc">Parsers &middot; keychain</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#d97706"></span>
+            <div><div class="prov-name">go-ego/gse</div><div class="prov-desc">CJK segmentation</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#16a34a"></span>
+            <div><div class="prov-name">Vector</div><div class="prov-desc">Self-implemented</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Get Started -->
+    <section class="s alt" id="start">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">快速開始</span>
+          <h2>四個步驟，從資料夾到搜尋</h2>
+          <p>安裝一次、註冊一個資料庫、放入你的檔案，然後開始查詢。</p>
+        </div>
+        <div class="step-grid">
+          <div class="step">
+            <div class="step-n">1</div>
+            <h4>安裝</h4>
+            <p>自動佈署 Go 並建置 kura 二進位檔。支援 macOS 與 Linux。</p>
+            <code>curl -fsSL https://kuradb.agenvoy.com/scripts/install.sh | bash</code>
+          </div>
+          <div class="step">
+            <div class="step-n">2</div>
+            <h4>新增資料庫</h4>
+            <p>建立收件匣與 <code>~/Kura_notes</code> 符號連結。</p>
+            <code>kura add notes</code>
+          </div>
+          <div class="step">
+            <div class="step-n">3</div>
+            <h4>放入檔案</h4>
+            <p>將文件複製到已建立符號連結的收件匣資料夾。</p>
+            <code>cp ~/Documents/*.pdf ~/Kura_notes/</code>
+          </div>
+          <div class="step">
+            <div class="step-n">4</div>
+            <h4>啟動並查詢</h4>
+            <p>伺服器會自動載入、監看並嵌入。</p>
+            <code>kura</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <div class="wrap">
+        <h2>將你的檔案轉化為知識</h2>
+        <p>一個二進位檔。一個資料夾。為代理程式準備的搜尋。</p>
+        <div class="cta-btns">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener" class="btn-p">
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            前往 GitHub
+          </a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener" class="btn-s">探索 Agenvoy</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="foot-inner">
+        <div class="foot-l">
+          <img src="/logo-min.svg" alt="" style="height:20px;opacity:0.7;" />
+          <span>KuraDB &middot; 給 Agenvoy 的唯讀 RAG 資料庫 &middot; &copy; 2026</span>
+        </div>
+        <div class="foot-r">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener">Agenvoy</a>
+        </div>
+      </div>
+    </footer>
+
+    <a href="/" class="lang-fab" aria-label="切換語言 / Switch to English" hreflang="en"><i class="fa-solid fa-language"></i><span>EN</span></a>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      function copyCmd() {
+        navigator.clipboard.writeText(document.getElementById("install-cmd").textContent).then(function() {
+          var t = document.getElementById("toast");
+          t.textContent = "已複製到剪貼簿";
+          t.classList.add("show");
+          setTimeout(function() { t.classList.remove("show"); }, 1600);
+        });
+      }
+    </script>
+  </body>
+</html>

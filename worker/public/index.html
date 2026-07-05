@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="robots" content="index, follow" />
+
+    <title>KuraDB - Drop a Folder, Get a Searchable Knowledge Base | Read-Only RAG for Agenvoy</title>
+    <meta name="title" content="KuraDB - Drop a Folder, Get a Searchable Knowledge Base | Read-Only RAG for Agenvoy" />
+    <meta name="description" content="KuraDB turns a folder of documents into an instantly searchable, agent-ready knowledge base. Drop in PDFs, Office docs, spreadsheets, or Markdown — KuraDB watches, parses, chunks, and embeds them automatically, then serves semantic and CJK-aware keyword search over a strictly read-only local API." />
+    <meta name="keywords" content="rag, retrieval augmented generation, vector search, semantic search, embeddings, sqlite, local first, agenvoy, kuradb, openai embeddings, document search, knowledge base, go" />
+    <meta name="author" content="Pardn Chiu" />
+    <link rel="author" href="https://pardn.io/" />
+    <link rel="canonical" href="https://kuradb.agenvoy.com/" />
+    <link rel="icon" href="/logo-min.svg" type="image/svg+xml" />
+
+    <meta property="og:title" content="KuraDB - Drop a Folder, Get a Searchable Knowledge Base" />
+    <meta property="og:description" content="A read-only RAG database service for Agenvoy. Watch a folder, auto-embed every document, serve semantic + keyword search over a local read-only API. SQLite-backed, zero external vector DB." />
+    <meta property="og:url" content="https://kuradb.agenvoy.com/" />
+    <meta property="og:site_name" content="KuraDB" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="KuraDB - Drop a Folder, Get a Searchable Knowledge Base" />
+    <meta property="twitter:description" content="A read-only RAG database service for Agenvoy. Watch a folder, auto-embed every document, serve semantic + keyword search." />
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L5VYEZPVXX"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-L5VYEZPVXX");</script>
+
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@type":"SoftwareApplication",
+      "applicationCategory":"DeveloperApplication",
+      "operatingSystem":"macOS, Linux",
+      "inLanguage":"en",
+      "name":"KuraDB",
+      "description":"A read-only RAG database service consumed by Agenvoy. Drop files into a watched folder; KuraDB parses, chunks, embeds, and indexes them, then serves semantic and CJK-aware keyword search over HTTP.",
+      "featureList":["Automatic ingestion pipeline","Semantic vector search","CJK-aware keyword search","Read-only HTTP API","Self-contained vector layer","SQLite source of truth","Automatic embedding","Soft-delete consistency"],
+      "url":"https://kuradb.agenvoy.com/",
+      "sameAs":["https://github.com/agenvoy/kuradb"],
+      "creator":{"@type":"Person","name":"Pardn Chiu","url":"https://pardn.io/","sameAs":["https://github.com/pardnchiu"]}
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="/index.css" />
+  </head>
+  <body>
+    <!-- Nav -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="https://agenvoy.com" target="_blank" rel="noopener" class="nav-logo">
+          <picture>
+            <source media="(max-width: 480px)" srcset="/logo-min.svg" />
+            <img src="/logo-text.svg" alt="Agenvoy" />
+          </picture>
+          <span class="nav-sub">KuraDB</span>
+        </a>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#pipeline">Pipeline</a>
+          <a href="#search">Search</a>
+          <a href="#api">API</a>
+          <a href="#start">Get Started</a>
+        </div>
+        <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener" class="nav-gh">
+          <i class="fa-brands fa-github"></i>
+          GitHub
+        </a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          Read-Only RAG &middot; Built for Agenvoy
+        </div>
+        <h1>Drop a Folder.<br /><span class="grad">Get a Searchable Knowledge Base.</span></h1>
+        <p class="hero-sub">KuraDB watches a folder, parses every document, and embeds it automatically &mdash; then serves semantic and CJK-aware keyword search over a strictly read-only local API.</p>
+        <div class="install-box">
+          <code id="install-cmd">curl -fsSL https://kuradb.agenvoy.com/scripts/install.sh | bash</code>
+          <button onclick="copyCmd()">Copy</button>
+        </div>
+        <div class="hero-links">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener">Agenvoy</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Terminal Demo -->
+    <section class="s">
+      <div class="wrap">
+        <div class="term">
+          <div class="term-bar">
+            <span class="term-dot r"></span><span class="term-dot y"></span><span class="term-dot g"></span>
+            <span class="term-title">kura</span>
+          </div>
+          <div class="term-body">
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">kura add notes</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;created inbox</span> <span class="t-dim">~/Kura_notes -&gt; ~/.config/kuradb/notes/inbox</span></div>
+            <div><span class="t-dim">&nbsp;&nbsp;drop your PDFs, docs, sheets, or markdown here</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">kura</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;watch</span> <span class="t-dim">notes &middot; 14 files &middot; 312 chunks</span></div>
+            <div><span class="t-tool">&nbsp;&nbsp;embed</span> <span class="t-dim">312/312 &middot; text-embedding-3-small &middot; dim 512</span></div>
+            <div><span class="t-result">&nbsp;&nbsp;serving</span> <span class="t-dim">http://127.0.0.1:48213</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">&#10095;</span> <span class="t-cmd">curl '127.0.0.1:48213/api/semantic?db=notes&amp;q=retry+backoff+strategy'</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-tool">{</span> <span class="t-key">"results"</span><span class="t-tool">: [{</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">"source"</span><span class="t-tool">:</span> <span class="t-str">"resilience-patterns.pdf"</span><span class="t-tool">,</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">"matches"</span><span class="t-tool">: [{</span> <span class="t-key">"chunk"</span><span class="t-tool">:</span> <span class="t-result">7</span><span class="t-tool">,</span> <span class="t-key">"content"</span><span class="t-tool">:</span> <span class="t-str">"Exponential backoff with jitter..."</span> <span class="t-tool">}]</span></div>
+            <div><span class="t-tool">}] }</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="s alt" id="features">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Features</span>
+          <h2>A RAG Backend That Stays Out of Your Way</h2>
+          <p>Watch, parse, embed, and serve &mdash; a single Go binary with zero external vector database.</p>
+        </div>
+        <div class="feat-grid">
+          <div class="feat">
+            <div class="feat-icon blue"><i class="fa-solid fa-gears"></i></div>
+            <h3>Automatic Ingestion</h3>
+            <p>Drop a file in the watched folder. KuraDB sniffs, parses, chunks, and queues it for embedding &mdash; no commands, no schemas.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon purple"><i class="fa-solid fa-star"></i></div>
+            <h3>Semantic Vector Search</h3>
+            <p>Two-stage cosine search: coarse source-level ranking, then a parallel chunk-level scan across CPU cores. Self-implemented, no ToriiDB.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon teal"><i class="fa-solid fa-language"></i></div>
+            <h3>CJK Keyword Search</h3>
+            <p>gse-powered Chinese segmentation with stopwords. Scores rows by keyword hit count for precise, language-aware matching.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon red"><i class="fa-solid fa-lock"></i></div>
+            <h3>Read-Only Contract</h3>
+            <p>The HTTP API has no mutation endpoints by design. Data enters one way only &mdash; through the watcher pipeline. A trust boundary, not a config flag.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon green"><i class="fa-solid fa-database"></i></div>
+            <h3>SQLite Source of Truth</h3>
+            <p>Every chunk and vector lives in SQLite. The in-memory vector cache is rebuildable &mdash; never authoritative, never lost on restart.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon orange"><i class="fa-solid fa-bolt"></i></div>
+            <h3>Smart Re-embedding</h3>
+            <p>Upsert only invalidates a vector when content actually changed. Identical files keep their embeddings &mdash; no wasted OpenAI round-trips.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon cyan"><i class="fa-solid fa-stopwatch"></i></div>
+            <h3>Query Cache</h3>
+            <p>Query embeddings are cached in a global SQLite store. Repeated searches skip the embedding call and go straight to the vector scan.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon pink"><i class="fa-solid fa-filter"></i></div>
+            <h3>Soft-Delete Consistency</h3>
+            <p>Removed files are dismissed, not dropped. Every semantic and keyword query strictly filters dismissed content from results.</p>
+          </div>
+          <div class="feat">
+            <div class="feat-icon blue"><i class="fa-solid fa-plug"></i></div>
+            <h3>Agenvoy-Native</h3>
+            <p>Binds a random local port and publishes its URL to an endpoint file, so Agenvoy discovers and consumes it as a child process automatically.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section class="s" id="pipeline">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Pipeline</span>
+          <h2>One-Way Ingestion, by Design</h2>
+          <p>Data enters through a single path. The <code>database</code> package is the only write entry point &mdash; nothing else touches SQLite.</p>
+        </div>
+        <div class="gap-flow">
+          <div class="gap-step">
+            <div class="num">Step 1</div>
+            <h4>Watch</h4>
+            <p>Poll the inbox every 10s. Detect changes via a persisted size + mtime snapshot.</p>
+            <span class="badge">walkFiles</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 2</div>
+            <h4>Parse</h4>
+            <p>Sniff text, dispatch by type, split into chunks &mdash; PDF, Office, sheets, markdown.</p>
+            <span class="badge">parser</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 3</div>
+            <h4>Embed</h4>
+            <p>Tick every 5s, batch of 64. Embed pending rows, write vectors back to SQLite.</p>
+            <span class="badge">openai</span>
+            <span class="gap-arrow">&rarr;</span>
+          </div>
+          <div class="gap-step">
+            <div class="num">Step 4</div>
+            <h4>Serve</h4>
+            <p>Read-only HTTP over localhost. Two-stage vector + keyword search over fresh rows.</p>
+            <span class="badge">gin</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search -->
+    <section class="s alt" id="search">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Search</span>
+          <h2>Two Ways to Find Anything</h2>
+          <p>Semantic for meaning, keyword for exact terms. Both filter dismissed content and never leak internal scoring fields.</p>
+        </div>
+        <div class="mcp-grid">
+          <div class="mcp-card">
+            <div class="mcp-hd">
+              <span class="mcp-dir srv">Semantic</span>
+              <h3>Search by Meaning</h3>
+            </div>
+            <div class="mcp-bd">
+              <p>Query cache &rarr; embed on miss &rarr; two-stage cosine search &rarr; drop hits below 0.3 &rarr; hydrate full rows from SQLite, grouped by source.</p>
+              <div class="code-block">
+                <span class="cc"># GET /api/semantic</span><br>
+                <span class="cm">GET</span> /api/semantic?db=<span class="cs">notes</span>&amp;q=<span class="cs">retry+strategy</span>&amp;limit=<span class="ck">10</span><br>
+                <br>
+                {<br>
+                &nbsp;&nbsp;<span class="ck">"results"</span>: [{<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"source"</span>: <span class="cs">"resilience.pdf"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"matches"</span>: [{ <span class="ck">"chunk"</span>: 7, <span class="ck">"content"</span>: <span class="cs">"..."</span> }]<br>
+                &nbsp;&nbsp;}]<br>
+                }
+              </div>
+              <div class="tags">
+                <span class="tag">cosine similarity</span>
+                <span class="tag">two-stage scan</span>
+                <span class="tag">minScore 0.3</span>
+              </div>
+            </div>
+          </div>
+          <div class="mcp-card">
+            <div class="mcp-hd">
+              <span class="mcp-dir cli">Keyword</span>
+              <h3>Search by Term</h3>
+            </div>
+            <div class="mcp-bd">
+              <p>Tokenize the query with CJK-aware segmentation, score each row by how many keyword clauses match, order by hit count &mdash; always filtering dismissed rows.</p>
+              <div class="code-block">
+                <span class="cc"># GET /api/keyword</span><br>
+                <span class="cm">GET</span> /api/keyword?db=<span class="cs">notes</span>&amp;q=<span class="cs">&#37325;&#35430;+&#36864;&#36991;</span>&amp;limit=<span class="ck">10</span><br>
+                <br>
+                {<br>
+                &nbsp;&nbsp;<span class="ck">"results"</span>: [{<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"source"</span>: <span class="cs">"retry-notes.md"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="ck">"matches"</span>: [{ <span class="ck">"chunk"</span>: 2, <span class="ck">"content"</span>: <span class="cs">"..."</span> }]<br>
+                &nbsp;&nbsp;}]<br>
+                }
+              </div>
+              <div class="tags">
+                <span class="tag">go-ego/gse</span>
+                <span class="tag">stopwords</span>
+                <span class="tag">hit-count rank</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formats -->
+    <section class="s" id="formats">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Formats</span>
+          <h2>Bring Any Document</h2>
+          <p>Text sniffing skips binaries and media automatically. Everything else is parsed, chunked, and embedded.</p>
+        </div>
+        <div class="int-grid">
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-pdf"></i></div>
+            <h4>PDF</h4>
+            <p>Full text extraction, page-aware chunking</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-lines"></i></div>
+            <h4>DOCX &middot; PPTX</h4>
+            <p>Word and PowerPoint document bodies</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-table"></i></div>
+            <h4>XLSX &middot; CSV</h4>
+            <p>Tabular sheets flattened to rows</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-file-code"></i></div>
+            <h4>Markdown</h4>
+            <p>Markdown and plain UTF-8 text</p>
+          </div>
+          <div class="int-card">
+            <div class="int-icon"><i class="fa-solid fa-network-wired"></i></div>
+            <h4>REST API</h4>
+            <p>Read-only HTTP for any consumer</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API + CLI -->
+    <section class="s alt" id="api">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Interface</span>
+          <h2>Read-Only API &amp; a Tiny CLI</h2>
+          <p>Four endpoints to query, four subcommands to manage. No mutation surface anywhere.</p>
+        </div>
+        <div class="tool-grid">
+          <div class="tool-grp">
+            <h3>HTTP Endpoints</h3>
+            <p class="desc">All under <code>/api</code>, bound to localhost on a random free port. limit defaults to 10, max 100.</p>
+            <div class="ep">
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>health</b></span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>list</b></span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>semantic</b>?db=&amp;q=&amp;limit=</span></div>
+              <div class="ep-row"><span class="ep-m">GET</span><span class="ep-path">/api/<b>keyword</b>?db=&amp;q=&amp;limit=</span></div>
+            </div>
+          </div>
+          <div class="tool-grp">
+            <h3>CLI Commands</h3>
+            <p class="desc">Run <code>kura</code> with no args to start the server. Subcommands manage the database registry.</p>
+            <div class="tool-tags">
+              <span class="tt"><b>kura</b> &middot; start server</span>
+              <span class="tt"><b>kura add</b> &lt;name&gt;</span>
+              <span class="tt"><b>kura list</b></span>
+              <span class="tt"><b>kura remove</b> &lt;name&gt;</span>
+              <span class="tt"><b>kura edit</b> &lt;old&gt; &lt;new&gt;</span>
+              <span class="tt"><b>kura help</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stack -->
+    <section class="s" id="stack">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Under the Hood</span>
+          <h2>Lean Stack, No Heavy Dependencies</h2>
+          <p>Personal-scale data needs a linear scan and a good index &mdash; not a distributed vector cluster.</p>
+        </div>
+        <div class="prov-grid">
+          <div class="prov">
+            <span class="prov-dot" style="background:#00add8"></span>
+            <div><div class="prov-name">Go 1.25</div><div class="prov-desc">Single static binary</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#003b57"></span>
+            <div><div class="prov-name">SQLite</div><div class="prov-desc">Source of truth</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#10a37f"></span>
+            <div><div class="prov-name">OpenAI</div><div class="prov-desc">embedding-3-small &middot; 512</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#00acd7"></span>
+            <div><div class="prov-name">Gin</div><div class="prov-desc">Read-only HTTP</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#1461DC"></span>
+            <div><div class="prov-name">go-sqlkit</div><div class="prov-desc">Read/write pools</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#6d28d9"></span>
+            <div><div class="prov-name">go-pkg</div><div class="prov-desc">Parsers &middot; keychain</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#d97706"></span>
+            <div><div class="prov-name">go-ego/gse</div><div class="prov-desc">CJK segmentation</div></div>
+          </div>
+          <div class="prov">
+            <span class="prov-dot" style="background:#16a34a"></span>
+            <div><div class="prov-name">Vector</div><div class="prov-desc">Self-implemented</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Get Started -->
+    <section class="s alt" id="start">
+      <div class="wrap">
+        <div class="s-head">
+          <span class="s-tag">Get Started</span>
+          <h2>From Folder to Search in Four Steps</h2>
+          <p>Install once, register a database, drop your files, and start querying.</p>
+        </div>
+        <div class="step-grid">
+          <div class="step">
+            <div class="step-n">1</div>
+            <h4>Install</h4>
+            <p>Bootstraps Go and builds the kura binary. macOS and Linux.</p>
+            <code>curl -fsSL https://kuradb.agenvoy.com/scripts/install.sh | bash</code>
+          </div>
+          <div class="step">
+            <div class="step-n">2</div>
+            <h4>Add a Database</h4>
+            <p>Creates an inbox and a <code>~/Kura_notes</code> symlink.</p>
+            <code>kura add notes</code>
+          </div>
+          <div class="step">
+            <div class="step-n">3</div>
+            <h4>Drop Files</h4>
+            <p>Copy documents into the symlinked inbox folder.</p>
+            <code>cp ~/Documents/*.pdf ~/Kura_notes/</code>
+          </div>
+          <div class="step">
+            <div class="step-n">4</div>
+            <h4>Start &amp; Query</h4>
+            <p>Server auto-loads, watches, and embeds.</p>
+            <code>kura</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <div class="wrap">
+        <h2>Turn Your Files Into Knowledge</h2>
+        <p>One binary. One folder. Agent-ready search.</p>
+        <div class="cta-btns">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener" class="btn-p">
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            View on GitHub
+          </a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener" class="btn-s">Explore Agenvoy</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="foot-inner">
+        <div class="foot-l">
+          <img src="/logo-min.svg" alt="" style="height:20px;opacity:0.7;" />
+          <span>KuraDB &middot; A read-only RAG database for Agenvoy &middot; &copy; 2026</span>
+        </div>
+        <div class="foot-r">
+          <a href="https://github.com/agenvoy/kuradb" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/pardnchiu/agenvoy" target="_blank" rel="noopener">Agenvoy</a>
+        </div>
+      </div>
+    </footer>
+
+    <a href="/zh/" class="lang-fab" aria-label="切換語言 / Switch to Chinese" hreflang="zh-Hant"><i class="fa-solid fa-language"></i><span>中文</span></a>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      function copyCmd() {
+        navigator.clipboard.writeText(document.getElementById("install-cmd").textContent).then(function() {
+          var t = document.getElementById("toast");
+          t.textContent = "Copied to clipboard";
+          t.classList.add("show");
+          setTimeout(function() { t.classList.remove("show"); }, 1600);
+        });
+      }
+    </script>
+  </body>
+</html>
