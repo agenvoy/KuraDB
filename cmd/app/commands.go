@@ -10,16 +10,36 @@ import (
 	"strings"
 
 	"github.com/agenvoy/kuradb/internal/database"
+	"github.com/agenvoy/kuradb/internal/runtime"
 	go_pkg_filesystem "github.com/pardnchiu/go-pkg/filesystem"
 )
 
+func cmdStop() {
+	_, configDir := mustConfigDir()
+	r, err := runtime.Read(configDir)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "stop: no running daemon found")
+		os.Exit(1)
+	}
+	if !runtime.IsAlive(r.PID) {
+		fmt.Fprintln(os.Stderr, "stop: daemon not running")
+		os.Exit(1)
+	}
+	if err := runtime.Stop(r.PID); err != nil {
+		fmt.Fprintf(os.Stderr, "stop: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("stopped kura (PID %d)\n", r.PID)
+}
+
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, `usage:
-  kura                            start server (loads all registered dbs)
+  kura                            start server in background
   kura add <name>                 register a new db
   kura list                       list registered dbs
   kura remove <name>              unregister and delete a db (requires confirmation)
   kura edit <old> <new>           rename a db
+  kura stop                       stop the running server
   kura help                       show this message`)
 }
 

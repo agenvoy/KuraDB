@@ -3,9 +3,6 @@ package apiHandler
 import (
 	"context"
 	"fmt"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 
 	"github.com/agenvoy/kuradb/internal/database"
 	databaseHandler "github.com/agenvoy/kuradb/internal/database/handler"
@@ -16,39 +13,6 @@ import (
 const (
 	minScore = 0.3
 )
-
-func Semantic(dbs map[string]*database.DB, embedder openai.Embedder, qcache *openai.Cache) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		name := c.GetString("db")
-		if name == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "db is required",
-			})
-			return
-		}
-
-		q := c.Query("q")
-		if q == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "q is required",
-			})
-			return
-		}
-
-		limit := queryLimit(c)
-
-		results, err := getSemantic(c.Request.Context(), dbs, name, embedder, qcache, q, limit)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"results": group(results),
-		})
-	}
-}
 
 func getSemantic(ctx context.Context, dbs map[string]*database.DB, name string, embedder openai.Embedder, qCache *openai.Cache, q string, limit int) ([]databaseHandler.FileRow, error) {
 	db := dbs[name]
