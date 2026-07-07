@@ -1,4 +1,4 @@
-.PHONY: app build stop test add list remove edit help
+.PHONY: app build stop test add list remove edit port help
 
 BIN := bin/kura
 
@@ -23,23 +23,33 @@ test:
 	@go test -v -count=1 ./...
 
 # Subcommands.
-# Usage:
-#   make add name=foo
+# Usage
+#   make add foo
 #   make list
-#   make remove name=foo            # stdin 'yes' to confirm
-#   make edit old=foo new=bar
+#   make remove foo                 # stdin 'yes' to confirm
+#   make edit old new
+#   make port set 8080 | make port clear
 #   make help
+SUBCOMMANDS := add list remove edit port
+ifneq (,$(filter $(firstword $(MAKECMDGOALS)),$(SUBCOMMANDS)))
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(eval $(ARGS):;@:)
+endif
+
 add:
-	go run ./cmd/app add $(name)
+	go run ./cmd/app add $(ARGS)
 
 list:
 	go run ./cmd/app list
 
 remove:
-	go run ./cmd/app remove $(name)
+	go run ./cmd/app remove $(ARGS)
 
 edit:
-	go run ./cmd/app edit $(old) $(new)
+	go run ./cmd/app edit $(ARGS)
+
+port:
+	go run ./cmd/app port $(ARGS)
 
 help:
 	go run ./cmd/app help

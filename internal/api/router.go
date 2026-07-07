@@ -20,7 +20,7 @@ func Router(reg *database.Registry, dbs map[string]*database.DB, embedder openai
 	api := router.Group("/api")
 	api.GET("/health", apiHandler.Health())
 	api.GET("/list", apiHandler.List(reg, dbs))
-	api.GET("/search", queryDB(dbs), apiHandler.Search(dbs, embedder, qCache))
+	api.GET("/search", queryDB(dbs), withTarget(""), apiHandler.Search(dbs, embedder, qCache))
 
 	// * will deprecate in v1.*.*, keep this for ensuring Agenvoy won't break.
 	api.GET("/semantic", queryDB(dbs), withTarget("semantic"), apiHandler.Search(dbs, embedder, qCache))
@@ -52,6 +52,9 @@ func queryDB(dbs map[string]*database.DB) gin.HandlerFunc {
 
 func withTarget(target string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if target == "" {
+			target = c.Query("target")
+		}
 		c.Set("target", target)
 		c.Next()
 	}

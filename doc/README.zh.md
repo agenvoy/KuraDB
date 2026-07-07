@@ -8,7 +8,6 @@
 </p>
 
 <p align="center">
-<a href="https://pkg.go.dev/github.com/agenvoy/kuradb"><img src="https://img.shields.io/badge/GO-REFERENCE-blue?include_prereleases&style=for-the-badge" alt="Go Reference"></a>
 <a href="Release"><img src="https://img.shields.io/github/v/tag/agenvoy/kuradb?include_prereleases&style=for-the-badge" alt="Release"></a>
 <a href="../LICENSE"><img src="https://img.shields.io/github/license/agenvoy/kuradb?include_prereleases&style=for-the-badge" alt="License"></a>
 </p>
