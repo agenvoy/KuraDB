@@ -66,10 +66,6 @@ graph TB
 <a href="mailto:hi@pardn.io">hi@pardn.io</a><br>
 <a href="https://www.linkedin.com/in/pardnchiu">https://www.linkedin.com/in/pardnchiu</a>
 
-## Stars
-
-[![Star](https://api.star-history.com/svg?repos=pardnchiu/KuraDB&type=Date)](https://www.star-history.com/#pardnchiu/KuraDB&Date)
-
 ***
 
 ©️ 2026 [邱敬幃 Pardn Chiu](https://www.linkedin.com/in/pardnchiu)

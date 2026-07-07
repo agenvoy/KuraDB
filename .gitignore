@@ -4,3 +4,5 @@
 tests/results.log
 worker/.wrangler/
 worker/node_modules/
+worker/public/docs/tags/
+worker/public/docs/released/
