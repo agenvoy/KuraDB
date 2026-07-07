@@ -42,6 +42,13 @@ make remove name=my_docs
 
 # Rename a database
 make edit old=my_docs new=my_archive
+
+# Pin/unpin the server port
+make port set 8080
+make port clear
+
+# Stop the running server
+make stop
 ```
 
 ## Configuration
@@ -61,11 +68,13 @@ All data is stored under `~/.config/kuradb/`:
 | Path | Purpose |
 |------|---------|
 | `db.json` | Database registry (JSON) |
+| `config.json` | Server config (JSON) — currently only a pinned `port` |
 | `global.db` | Global SQLite (query cache) |
 | `{name}/data.db` | Per-database SQLite (file_data) |
 | `{name}/inbox/` | Watched directory — drop files here for auto-indexing |
 | `{name}/record.json` | Filesystem snapshot for change detection |
 | `endpoint` | Written with the HTTP server address |
+| `daemon.log` | Background server stdout/stderr |
 
 Each database gets a symlink at `~/Kura_{name}` → `~/.config/kuradb/{name}/inbox/` for easy drag-and-drop.
 
@@ -77,12 +86,12 @@ Each database gets a symlink at `~/Kura_{name}` → `~/.config/kuradb/{name}/inb
 kura
 ```
 
-On startup the server:
+`kura` forks itself into the background and returns immediately once the server is ready (10s timeout). On startup the server:
 1. Loads all registered databases
 2. Rebuilds the vector cache from SQLite
 3. Starts the file watcher (polls every 10 seconds)
 4. Starts the embedding scheduler (processes one batch every 5 seconds, up to 64 chunks per batch)
-5. Starts the HTTP API on a random port, writing the address to `~/.config/kuradb/endpoint`
+5. Starts the HTTP API — on the pinned `port` from `config.json` if set, otherwise a random port — writing the address to `~/.config/kuradb/endpoint`
 
 ### Manage Databases
 
@@ -98,6 +107,15 @@ kura edit my_docs my_archive
 
 # Remove (requires typing 'yes' to confirm)
 kura remove my_archive
+
+# Stop the running server
+kura stop
+
+# Pin the server to a fixed port (restarts the server)
+kura port set 8080
+
+# Unpin the port (takes effect on next manual restart)
+kura port clear
 ```
 
 ### Query API
@@ -118,12 +136,12 @@ curl "$(cat ~/.config/kuradb/endpoint)/api/list"
 # {"dbs":["my_docs"]}
 ```
 
-#### Semantic Search
+#### Search
 
-Uses OpenAI embeddings for vector similarity search:
+Runs keyword and semantic search concurrently and returns both result sets:
 
 ```bash
-curl "$(cat ~/.config/kuradb/endpoint)/api/semantic?db=my_docs&q=what+is+RAG&limit=5"
+curl "$(cat ~/.config/kuradb/endpoint)/api/search?db=my_docs&q=what+is+RAG&limit=5"
 ```
 
 | Parameter | Required | Default | Description |
@@ -131,12 +149,24 @@ curl "$(cat ~/.config/kuradb/endpoint)/api/semantic?db=my_docs&q=what+is+RAG&lim
 | `db` | Yes | — | Target database name |
 | `q` | Yes | — | Query string |
 | `limit` | No | `10` | Max results (up to 100) |
+| `target` | No | both | `keyword` or `semantic` to run only one strategy |
+
+- **Keyword**: uses the gse Chinese tokenizer to split the query, then matches via SQLite `LIKE`
+- **Semantic**: uses OpenAI embeddings for vector similarity search
 
 Response format:
 
 ```json
 {
-  "results": [
+  "keyword": [
+    {
+      "source": "/path/to/file.md",
+      "matches": [
+        {"chunk": 0, "content": "RAG stands for Retrieval-Augmented Generation..."}
+      ]
+    }
+  ],
+  "semantic": [
     {
       "source": "/path/to/file.md",
       "matches": [
@@ -147,15 +177,9 @@ Response format:
 }
 ```
 
-#### Keyword Search
+Omitted `target` values are omitted from the response entirely (e.g. `target=keyword` returns only the `keyword` key).
 
-Uses Chinese tokenizer (gse) for keyword matching:
-
-```bash
-curl "$(cat ~/.config/kuradb/endpoint)/api/keyword?db=my_docs&q=database&limit=10"
-```
-
-Parameters are the same as semantic search.
+> `/api/semantic` and `/api/keyword` still work as aliases for `/api/search?target=semantic` and `/api/search?target=keyword`, but are deprecated and will be removed in v1.*.*.
 
 ### Indexing Files
 
@@ -184,11 +208,13 @@ Supported file formats:
 
 | Command | Syntax | Description |
 |---------|--------|-------------|
-| `kura` | `kura` | Start server, loading all registered databases |
+| `kura` | `kura` | Fork server into background, loading all registered databases |
 | `add` | `kura add <name>` | Register a new database, create directory and symlink |
 | `list` | `kura list` | List registered databases |
 | `remove` | `kura remove <name>` | Unregister and delete a database (interactive confirmation) |
 | `edit` | `kura edit <old> <new>` | Rename a database |
+| `stop` | `kura stop` | Stop the running background server |
+| `port` | `kura port set <port>` \| `kura port clear` | Pin/unpin the HTTP port in `config.json` (`set` restarts the server; `clear` takes effect on next manual restart) |
 | `help` | `kura help` | Show usage message |
 
 ### Server Behavior
@@ -198,7 +224,7 @@ Supported file formats:
 | File watch polling | 10s | Scans inbox directory, compares file size and mtime for change detection |
 | Embedding schedule | 5s | Fetches `is_embed=FALSE` chunks from SQLite, batch-calls OpenAI |
 | Embedding batch size | 64 | Up to 64 chunks per batch |
-| HTTP port | 10000–65535 random | Up to 10 bind attempts; writes address to endpoint file on success |
+| HTTP port | pinned `port` from `config.json`, else 10000–65535 random | Random mode: up to 10 bind attempts; writes address to endpoint file on success |
 
 ### Search Pipeline
 
