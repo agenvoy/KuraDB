@@ -15,6 +15,7 @@ import (
 	go_pkg_filesystem "github.com/pardnchiu/go-pkg/filesystem"
 
 	"github.com/agenvoy/kuradb/internal/api"
+	"github.com/agenvoy/kuradb/internal/config"
 	"github.com/agenvoy/kuradb/internal/database"
 	"github.com/agenvoy/kuradb/internal/openai"
 )
@@ -29,11 +30,31 @@ const (
 )
 
 func runHTTP(ctx context.Context, configDir string, reg *database.Registry, perDBs map[string]*database.DB, embedder openai.Embedder, qcache *openai.Cache) {
-	ln, port, err := pickListener()
+	cfg, err := config.Read(configDir)
 	if err != nil {
-		slog.Error("http: pickListener",
+		slog.Warn("http: config.Read",
 			slog.String("error", err.Error()))
-		return
+		cfg = &config.Config{}
+	}
+
+	var ln net.Listener
+	var port int
+	if cfg.Port != 0 {
+		ln, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", cfg.Port))
+		if err != nil {
+			slog.Error("http: listen fixed port",
+				slog.Int("port", cfg.Port),
+				slog.String("error", err.Error()))
+			return
+		}
+		port = cfg.Port
+	} else {
+		ln, port, err = pickListener()
+		if err != nil {
+			slog.Error("http: pickListener",
+				slog.String("error", err.Error()))
+			return
+		}
 	}
 
 	url := fmt.Sprintf("http://%s:%d", "localhost", port)

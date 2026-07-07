@@ -7,8 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/agenvoy/kuradb/internal/config"
 	"github.com/agenvoy/kuradb/internal/database"
 	"github.com/agenvoy/kuradb/internal/runtime"
 	go_pkg_filesystem "github.com/pardnchiu/go-pkg/filesystem"
@@ -40,7 +42,58 @@ func printUsage(w io.Writer) {
   kura remove <name>              unregister and delete a db (requires confirmation)
   kura edit <old> <new>           rename a db
   kura stop                       stop the running server
+  kura port set <port>            pin the server to a fixed port (restarts server)
+  kura port clear                 unpin the port (takes effect on next manual restart)
   kura help                       show this message`)
+}
+
+func cmdPort(args []string) {
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "usage: kura port [set <port>|clear]")
+		os.Exit(2)
+	}
+
+	_, configDir := mustConfigDir()
+
+	switch args[0] {
+	case "set":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: kura port set <port>")
+			os.Exit(2)
+		}
+		port, err := strconv.Atoi(args[1])
+		if err != nil || port < 1 || port > 65535 {
+			fmt.Fprintf(os.Stderr, "port: invalid port: %s\n", args[1])
+			os.Exit(2)
+		}
+		if err := config.SetPort(configDir, port); err != nil {
+			fmt.Fprintf(os.Stderr, "port: config.SetPort: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("port set to %d\n", port)
+		restartServer(configDir)
+
+	case "clear":
+		if err := config.ClearPort(configDir); err != nil {
+			fmt.Fprintf(os.Stderr, "port: config.ClearPort: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("port cleared (restart the server manually to apply)")
+
+	default:
+		fmt.Fprintln(os.Stderr, "usage: kura port [set <port>|clear]")
+		os.Exit(2)
+	}
+}
+
+func restartServer(configDir string) {
+	if r, err := runtime.Read(configDir); err == nil && r != nil && runtime.IsAlive(r.PID) {
+		if err := runtime.Stop(r.PID); err != nil {
+			fmt.Fprintf(os.Stderr, "port: stop existing daemon: %v\n", err)
+			os.Exit(1)
+		}
+	}
+	runServer()
 }
 
 func cmdAdd(args []string) {

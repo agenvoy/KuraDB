@@ -52,6 +52,9 @@ func main() {
 		case "stop":
 			cmdStop()
 			return
+		case "port":
+			cmdPort(os.Args[2:])
+			return
 		case "help", "-h", "--help":
 			printUsage(os.Stdout)
 			return
