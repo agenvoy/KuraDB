@@ -22,7 +22,6 @@
 - [Architecture](#architecture)
 - [License](#license)
 - [Author](#author)
-- [Stars](#stars)
 
 ## Features
 
